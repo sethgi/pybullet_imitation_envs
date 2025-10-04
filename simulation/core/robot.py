@@ -8,6 +8,8 @@ class RobotBase(ABC):
         self.robot_id = None
         self._max_force = 200
 
+        self.joint_indices = None
+
     @abstractmethod
     def reset(self, client_id):
         """Load URDF and reset robot state."""
@@ -68,12 +70,13 @@ class RobotBase(ABC):
         else:
             joint_vel = J.T @ end_eff_velocity
 
+        print("end eff", end_eff_velocity)
+        print("joint vel", joint_vel)
             
         p.setJointMotorControlArray(self.robot_id,
-                                    self.controllable_joints,
+                                    self.joint_indices,
                                     p.VELOCITY_CONTROL,
-                                    targetVelocities=joint_vel,
-                                    forces = [self._max_force] * (len(self.controllable_joints)))
+                                    targetVelocities=joint_vel)
         
     def get_state(self):
         joint_states = p.getJointStates(self.robot_id, self.joint_indices, physicsClientId=self.client_id)

@@ -1,10 +1,11 @@
 import pybullet as p
 import numpy as np
 from ..core.teleop import TeleopBase
+from ..core.registry import TELEOP_REGISTRY
 
-
+@TELEOP_REGISTRY.register("keyboard")
 class KeyboardTeleop(TeleopBase):
-    def __init__(self, lin_vel=0.05, ang_vel=0.2):
+    def __init__(self, lin_vel_scale=0.05, rot_vel_scale=0.2):
         """
         Keyboard teleoperation that outputs end-effector velocities (6D twist).
         W/S -> +X/-X linear velocity
@@ -15,8 +16,8 @@ class KeyboardTeleop(TeleopBase):
         T/G -> +yaw/-yaw angular velocity
         """
         super().__init__()
-        self.lin_vel = lin_vel   # m/s equivalent
-        self.ang_vel = ang_vel   # rad/s equivalent
+        self.lin_vel = lin_vel_scale   # m/s equivalent
+        self.ang_vel = rot_vel_scale   # rad/s equivalent
 
     def get_action(self, obs=None):
         """

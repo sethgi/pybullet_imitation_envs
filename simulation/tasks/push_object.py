@@ -11,43 +11,43 @@ from scipy.spatial import cKDTree
 class PushableObject(Enum):
     T = "t_object.urdf"
 
-def get_body_aabb_points(body_id, client_id=0):
+def aabb_corners(aabb_min, aabb_max):
+    """Return the 8 corner points of an AABB as (8,3) np.array."""
+    mn = np.array(aabb_min, dtype=float)
+    mx = np.array(aabb_max, dtype=float)
+    xs = [mn[0], mx[0]]
+    ys = [mn[1], mx[1]]
+    zs = [mn[2], mx[2]]
     pts = []
-    visuals = p.getVisualShapeData(body_id, physicsClientId=client_id)
-    for vis in visuals:
-        link_index = vis[1]
-        local_pos = np.array(vis[5])  # local offset
-        local_orn = np.array(vis[6])  # local orientation (quat)
-        dims = vis[3]                 # extents for box/sphere/cylinder, etc.
-        
-        # Get world transform of this link
-        if link_index == -1:
-            link_state = p.getBasePositionAndOrientation(body_id, physicsClientId=client_id)
-        else:
-            link_state = p.getLinkState(body_id, link_index, physicsClientId=client_id)[:2]
-        link_pos, link_orn = link_state
+    for i in range(2):
+        for j in range(2):
+            for k in range(2):
+                pts.append([xs[i], ys[j], zs[k]])
+    return np.asarray(pts)
 
-        # Combine transforms: link ∘ local
-        world_pos, world_orn = p.multiplyTransforms(
-            link_pos, link_orn,
-            local_pos, local_orn
-        )
 
-        # For a box, dims = [half_x, half_y, half_z]
-        if vis[2] == p.GEOM_BOX:
-            half_extents = np.array(dims)
-            for i in [0,1]:
-                for j in [0,1]:
-                    for k in [0,1]:
-                        corner_local = [
-                            -half_extents[0] if i==0 else half_extents[0],
-                            -half_extents[1] if j==0 else half_extents[1],
-                            -half_extents[2] if k==0 else half_extents[2],
-                        ]
-                        rot = np.array(p.getMatrixFromQuaternion(world_orn)).reshape(3,3)
-                        pts.append(rot @ corner_local + np.array(world_pos))
-        # For meshes, dims[0] is scale. You could load the mesh offline to compute exact AABB if needed.
-    return np.array(pts)
+def get_body_aabb_points(body_id, client_id=0):
+    """
+    Collect AABB corners from base + all links, regardless of actuation.
+    Works for rigid multi-link objects and articulated ones.
+    """
+    pts = []
+    try:
+        num_links = p.getNumJoints(body_id, physicsClientId=client_id)
+    except p.error:
+        return np.empty((0, 3), dtype=float)
+
+    for link_idx in range(-1, num_links):  # -1 = base
+        try:
+            aabb_min, aabb_max = p.getAABB(body_id, linkIndex=link_idx, physicsClientId=client_id)
+            if aabb_min is not None and aabb_max is not None:
+                pts.append(aabb_corners(aabb_min, aabb_max))
+        except p.error:
+            continue
+
+    if len(pts) == 0:
+        return np.empty((0, 3), dtype=float)
+    return np.vstack(pts)
 
 def transform_vertices(verts, pos, orn):
     rot = np.array(p.getMatrixFromQuaternion(orn)).reshape(3, 3)

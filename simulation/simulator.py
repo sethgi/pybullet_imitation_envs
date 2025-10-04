@@ -4,10 +4,10 @@ import argparse
 
 import numpy as np
 from .robots.urdf_robot import URDFRobot, RobotURDFs
-from .core.registry import ROBOT_REGISTRY, TASK_REGISTRY
+from .core.registry import ROBOT_REGISTRY, TASK_REGISTRY, TELEOP_REGISTRY
 from .core.env_manager import EnvManager
 from .tasks.push_object import PushableObject
-
+from .teleop.keyboard_teleop import KeyboardTeleop
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Imitation Learning Framework")
@@ -19,6 +19,14 @@ def parse_args():
         default="KINOVA",
         choices=[e.name for e in RobotURDFs],
         help="Robot model to load"
+    )
+
+    parser.add_argument(
+        "--teleop",
+        type=str,
+        default="keyboard",
+        choices=["keyboard", "spacemouse"],
+        help="Type of teleoperator"
     )
 
     # Task selection
@@ -66,12 +74,30 @@ def parse_args():
         help="Position success tolerance (meters)"
     )
 
+    parser.add_argument(
+        "--linear_velocity_scale",
+        type=float,
+        default=0.1,
+        help="Multiplier for linear velocity for teleop"
+    )
+
+    parser.add_argument(
+        "--rot_velocity_scale",
+        type=float,
+        default=0.1,
+        help="Multiplier for rotational velocity for teleop"
+    )
+
 
     return parser.parse_args()
 
 
+
 def main():
     args = parse_args()
+
+    if args.teleop == "spacemouse":
+        from .teleop.spacemouse import SpaceMouseTeleop
 
     # Robot from registry + enum
     robot_enum = RobotURDFs[args.robot]
@@ -88,9 +114,15 @@ def main():
         task_kwargs["object"] = PushableObject[args.target_object]
 
     # Generic task build: tasks decide what to use
+    teleop_kwargs = {
+        "lin_vel_scale": args.linear_velocity_scale,
+        "rot_vel_scale": args.rot_velocity_scale
+    }
     task = TASK_REGISTRY.build(args.task, **task_kwargs)
 
-    env = EnvManager(robot, task)
+    teleop = TELEOP_REGISTRY.build(args.teleop, **teleop_kwargs)
+
+    env = EnvManager(robot, task, teleop=teleop)
 
     print(f"Robot initialized: {robot.urdf_path}")
     print(f"Task initialized: {args.task}")
@@ -100,10 +132,7 @@ def main():
     done=False
     
     while not done:
-        num_joints = len(robot.joint_indices)
-        action = np.random.uniform(-0.5, 0.5, size=num_joints)
-
-        obs, reward, done = env.step(action)
+        obs, reward, done = env.step()
         env.render()
 
         print(f"Reward: {reward:.3f}, Done: {done}")
