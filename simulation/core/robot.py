@@ -70,8 +70,6 @@ class RobotBase(ABC):
         else:
             joint_vel = J.T @ end_eff_velocity
 
-        print("end eff", end_eff_velocity)
-        print("joint vel", joint_vel)
             
         p.setJointMotorControlArray(self.robot_id,
                                     self.joint_indices,

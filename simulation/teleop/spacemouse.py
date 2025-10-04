@@ -28,14 +28,19 @@ class SpaceMouseTeleop(TeleopBase):
         Reads the SpaceMouse events and returns a 6D twist:
         [vx, vy, vz, wx, wy, wz]
         """
-        event = pyspacemouse.read()
+        
+        try:
+            event = pyspacemouse.read()
+        except:
+            event = None
+
         if event is None:
             return np.zeros(6)
 
         # event.trans -> (x, y, z) integers
         # event.rot -> (rx, ry, rz) integers
-        tx, ty, tz = event.trans
-        rx, ry, rz = event.rot
+        tx, ty, tz = event.x, event.y, event.z
+        rx, ry, rz = event.roll, event.pitch, event.yaw
 
         vx = tx * self.lin_vel_scale
         vy = ty * self.lin_vel_scale

@@ -77,14 +77,14 @@ def parse_args():
     parser.add_argument(
         "--linear_velocity_scale",
         type=float,
-        default=0.1,
+        default=1,
         help="Multiplier for linear velocity for teleop"
     )
 
     parser.add_argument(
         "--rot_velocity_scale",
         type=float,
-        default=0.1,
+        default=1,
         help="Multiplier for rotational velocity for teleop"
     )
 

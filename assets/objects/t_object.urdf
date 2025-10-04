@@ -1,14 +1,14 @@
 <?xml version="1.0" ?>
 <robot name="t_object">
 
-  <!-- Base link: vertical stem -->
-  <link name="stem">
+  <link name="base">
     <inertial>
       <origin xyz="0 0 0" rpy="0 0 0"/>
-      <mass value="0.5"/>
-      <inertia ixx="0.005" ixy="0" ixz="0" iyy="0.005" iyz="0" izz="0.005"/>
+      <mass value="1.0"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
 
+    <!-- Stem (vertical part of T, but flat on XY plane) -->
     <visual>
       <origin xyz="0 -0.05 0.025" rpy="0 0 0"/>
       <geometry>
@@ -24,16 +24,8 @@
         <box size="0.05 0.10 0.05"/>
       </geometry>
     </collision>
-  </link>
 
-  <!-- Crossbar link -->
-  <link name="crossbar">
-    <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <mass value="0.5"/>
-      <inertia ixx="0.005" ixy="0" ixz="0" iyy="0.005" iyz="0" izz="0.005"/>
-    </inertial>
-
+    <!-- Crossbar (horizontal part of T) -->
     <visual>
       <origin xyz="0 0.025 0.025" rpy="0 0 0"/>
       <geometry>
@@ -49,13 +41,7 @@
         <box size="0.15 0.05 0.05"/>
       </geometry>
     </collision>
-  </link>
 
-  <!-- Fixed joint attaching crossbar to stem -->
-  <joint name="stem_to_crossbar" type="fixed">
-    <parent link="stem"/>
-    <child link="crossbar"/>
-    <origin xyz="0 0 0" rpy="0 0 0"/>
-  </joint>
+  </link>
 
 </robot>
